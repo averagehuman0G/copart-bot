@@ -1,29 +1,69 @@
 const puppeteer = require('puppeteer');
 const readline = require('readline');
+
+const newCarResults = [];
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: false
+  terminal: false,
 });
 
-rl.on('line', function(line){
-    const makeAndModel = line.split(' ');
-    console.log(makeAndModel);
-    const make = makeAndModel[0];
-    const model = makeAndModel[1];
-    console.log(make, model);
-    getCars(make, model);
-    rl.close();
-})
+rl.on('line', async function(line) {
+  const makeAndModel = line.split(' ');
+  const make = makeAndModel[0];
+  const model = makeAndModel[1];
+  console.log(make, model);
+  await getCars(make, model);
+  rl.close();
+});
 
 async function getCars(make, model) {
+  const message = `Searching for ${make} and ${model}`;
+  console.log(message);
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   const url = `https://www.copart.com/lotSearchResults/?free=true&query=${make}%20${model}`;
   console.log(url);
   await page.goto(url);
+  await page.waitFor(1000);
+  page.click('#lot_year');
+  await page.waitFor(3000);
+  for (var i = 0; i < 100; i++) {
+    const carDetails = await page.evaluate(function(index) {
+      const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
+      const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
+      const carModelSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(6) > span`;
+      const damageTypeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(12) > span`;
+      const carYear = document.querySelector(carYearSelector);
+      const carMake = document.querySelector(carMakeSelector);
+      const carModel = document.querySelector(carModelSelector);
+      const damageType = document.querySelector(damageTypeSelector);
+      return {
+        carMake: carMake,
+        carModel: carModel,
+        carYear: carYear,
+        damageType: damageType,
+      };
+    }, i);
 
-  await page.screenshot({ path: './screenshots/copart.png' });
-
+    if (carDetails.carYear < 2014) {
+      break;
+    } else {
+      newCarResults.push(getCarDetails(i));
+    }
+  }
+  console.log(newCarResults);
   browser.close();
+}
+
+//function that only gets the information for cars above the 2014 year mark
+async function getCars(page) {
+  // We loop over 100 because that is the number of cars given to us in the first page
+  // if it is a really commmon car then we will need to continue on to the next page.
+
+
+  
+  //Need to implement going to the next page and keep getting cars
+  // goToNewPage();
 }
