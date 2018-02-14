@@ -29,41 +29,37 @@ async function getCars(make, model) {
   await page.waitFor(1000);
   page.click('#lot_year');
   await page.waitFor(3000);
-  for (var i = 0; i < 100; i++) {
-    const carDetails = await page.evaluate(function(index) {
+  // We loop over 100 because that is the number of cars given to us in the first page
+  // if it is a really commmon car then we will need to continue on to the next page.
+
+  //Need to implement going to the next page and keep getting cars if there are more than 100 that meet the criteria
+  // goToNewPage();
+  let carDetails;
+  for (var i = 1; i <= 100; i++) {
+    carDetails = await page.evaluate(function(index) {
       const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
       const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
       const carModelSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(6) > span`;
       const damageTypeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(12) > span`;
-      const carYear = document.querySelector(carYearSelector);
-      const carMake = document.querySelector(carMakeSelector);
-      const carModel = document.querySelector(carModelSelector);
-      const damageType = document.querySelector(damageTypeSelector);
-      return {
+      const carYear = document.querySelector(carYearSelector).innerText;
+      const carMake = document.querySelector(carMakeSelector).innerText;
+      const carModel = document.querySelector(carModelSelector).innerText;
+      const damageType = document.querySelector(damageTypeSelector).innerText;
+      const info = {
         carMake: carMake,
         carModel: carModel,
         carYear: carYear,
         damageType: damageType,
       };
+      return info;
     }, i);
-
+    console.log(carDetails);
     if (carDetails.carYear < 2014) {
       break;
     } else {
-      newCarResults.push(getCarDetails(i));
+      newCarResults.push(carDetails);
     }
   }
   console.log(newCarResults);
-  browser.close();
-}
-
-//function that only gets the information for cars above the 2014 year mark
-async function getCars(page) {
-  // We loop over 100 because that is the number of cars given to us in the first page
-  // if it is a really commmon car then we will need to continue on to the next page.
-
-
-  
-  //Need to implement going to the next page and keep getting cars
-  // goToNewPage();
+  await browser.close();
 }
