@@ -26,16 +26,20 @@ async function getCars(make, model) {
   const url = `https://www.copart.com/lotSearchResults/?free=true&query=${make}%20${model}`;
   console.log(url);
   await page.goto(url);
-  await page.waitFor(1000);
+  await page.waitFor(500);
   page.click('#lot_year');
-  await page.waitFor(3000);
+  await page.waitFor(2500);
   // We loop over 100 because that is the number of cars given to us in the first page
   // if it is a really commmon car then we will need to continue on to the next page.
 
   //Need to implement going to the next page and keep getting cars if there are more than 100 that meet the criteria
   // goToNewPage();
   let carDetails;
-  for (var i = 1; i <= 100; i++) {
+  const numberOfResults = await page.evaluate(function() {
+    return document.querySelector('#serverSideDataTable > tbody').childElementCount;
+  });
+
+  for (var i = 1; i <= numberOfResults; i++) {
     carDetails = await page.evaluate(function(index) {
       const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
       const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
