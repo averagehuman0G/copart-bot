@@ -1,42 +1,69 @@
-const page = require('webpage').create();
-const system = require('system');
+const puppeteer = require('puppeteer');
+const readline = require('readline');
 
-page.viewportSize = { width: 1024, height: 768 };
-//the clipRect is the portion of the page you are taking a screenshot of
-page.clipRect = { top: 0, left: 0, width: 1024, height: 768 };
-page.settings.userAgent =
-  'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36';
+const newCarResults = [];
 
-if (system.args.length < 3) {
-  console.log('Car make and model not entered');
-  phantom.exit();
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false,
+});
+
+rl.on('line', async function(line) {
+  const makeAndModel = line.split(' ');
+  const make = makeAndModel[0];
+  const model = makeAndModel[1];
+  console.log(make, model);
+  await getCars(make, model);
+  rl.close();
+});
+
+async function getCars(make, model) {
+  const message = `Searching for ${make} and ${model}`;
+  console.log(message);
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  const url = `https://www.copart.com/lotSearchResults/?free=true&query=${make}%20${model}`;
+  console.log(url);
+  await page.goto(url);
+  await page.waitFor(1000);
+  page.click('#lot_year');
+  await page.waitFor(3000);
+  for (var i = 0; i < 100; i++) {
+    const carDetails = await page.evaluate(function(index) {
+      const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
+      const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
+      const carModelSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(6) > span`;
+      const damageTypeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(12) > span`;
+      const carYear = document.querySelector(carYearSelector);
+      const carMake = document.querySelector(carMakeSelector);
+      const carModel = document.querySelector(carModelSelector);
+      const damageType = document.querySelector(damageTypeSelector);
+      return {
+        carMake: carMake,
+        carModel: carModel,
+        carYear: carYear,
+        damageType: damageType,
+      };
+    }, i);
+
+    if (carDetails.carYear < 2014) {
+      break;
+    } else {
+      newCarResults.push(getCarDetails(i));
+    }
+  }
+  console.log(newCarResults);
+  browser.close();
 }
 
-const carMake = system.args[1];
-const carModel = system.args[2];
-//lotSearchResults/?free=true&query=' + carMake + '%20' + carModel + '&page=1'
-const url = 'https://www.copart.com/';
+//function that only gets the information for cars above the 2014 year mark
+async function getCars(page) {
+  // We loop over 100 because that is the number of cars given to us in the first page
+  // if it is a really commmon car then we will need to continue on to the next page.
 
-console.log('Grabbing data from: ' + url);
 
-page.onResourceRequested = function(request) {
-  console.log('Request ' + JSON.stringify(request, undefined, 4));
-};
-page.onResourceReceived = function(response) {
-  console.log('Receive ' + JSON.stringify(response, undefined, 4));
-};
-console.log(page.cookies);
-page.open(url, function(status) {
-  console.log('Status: ' + status);
-  // console.log('Results for ' + system.args[1] + ' ' + system.args[2]);
-  // let list;
-  page.render('example.png');
-  // setTimeout(() => {
-  //   list = page.evaluate(() => {
-  //     // return document.querySelector('#serverSideDataTable');
-  //   });
-  // }, 5000);
-  //
-  // console.log(list);
-  phantom.exit();
-});
+  
+  //Need to implement going to the next page and keep getting cars
+  // goToNewPage();
+}

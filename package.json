@@ -1,0 +1,26 @@
+{
+  "name": "copart-bot",
+  "version": "1.0.0",
+  "description": "using headless chrome to browse the copart website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathanv3232/copart-bot.git"
+  },
+  "keywords": [
+    "node",
+    "puppeteer"
+  ],
+  "author": "Jonathan Vargas",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonathanv3232/copart-bot/issues"
+  },
+  "homepage": "https://github.com/jonathanv3232/copart-bot#readme",
+  "dependencies": {
+    "puppeteer": "^1.0.0"
+  }
+}
