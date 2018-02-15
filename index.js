@@ -26,44 +26,66 @@ async function getCars(make, model) {
   const url = `https://www.copart.com/lotSearchResults/?free=true&query=${make}%20${model}`;
   console.log(url);
   await page.goto(url);
-  await page.waitFor(500);
+  await page.setViewport({ width: 1920, height: 1080 });
+  await page.waitFor(2000);
   page.click('#lot_year');
-  await page.waitFor(2500);
-  // We loop over 100 because that is the number of cars given to us in the first page
-  // if it is a really commmon car then we will need to continue on to the next page.
+  await page.waitFor(3500);
+  await page.screenshot({ path: 'screenshots/shot.png' });
 
-  //Need to implement going to the next page and keep getting cars if there are more than 100 that meet the criteria
-  // goToNewPage();
-  let carDetails;
-  const numberOfResults = await page.evaluate(function() {
-    return document.querySelector('#serverSideDataTable > tbody').childElementCount;
+  // gets information about the results that we got back from our search
+  const resultDetails = await page.evaluate(function() {
+    // takes a part of the string containing the number of results and then parses it
+    const dataTableInfo = '#serverSideDataTable_info';
+    const numberOfResultsString = document.querySelector(dataTableInfo).innerText.split(' ')[5];
+    const numberOfResults = parseInt(numberOfResultsString.replace(',', ''));
+
+    const currentlyDisplaying = document.querySelector('#serverSideDataTable > tbody').childElementCount;
+
+    const pages = Math.ceil(numberOfResults / currentlyDisplaying);
+    return {
+      numberOfResults: numberOfResults,
+      currentlyDisplaying: currentlyDisplaying,
+      pages: pages,
+    };
   });
 
-  for (var i = 1; i <= numberOfResults; i++) {
-    carDetails = await page.evaluate(function(index) {
-      const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
-      const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
-      const carModelSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(6) > span`;
-      const damageTypeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(12) > span`;
-      const carYear = document.querySelector(carYearSelector).innerText;
-      const carMake = document.querySelector(carMakeSelector).innerText;
-      const carModel = document.querySelector(carModelSelector).innerText;
-      const damageType = document.querySelector(damageTypeSelector).innerText;
-      const info = {
-        carMake: carMake,
-        carModel: carModel,
-        carYear: carYear,
-        damageType: damageType,
-      };
-      return info;
-    }, i);
-    console.log(carDetails);
-    if (carDetails.carYear < 2014) {
-      break;
-    } else {
-      newCarResults.push(carDetails);
+  // if it is a really commmon car then we will need to continue on to the next page.
+  for (let i = 0; i < resultDetails.pages; i++) {
+    for (let j = 0; j < resultDetails.currentlyDisplaying; j++) {
+      carDetails = await page.evaluate(
+        function(index, page) {
+          const carYearSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(4) > span:nth-child(1)`;
+          const carMakeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(5) > span`;
+          const carModelSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(6) > span`;
+          const damageTypeSelector = `#serverSideDataTable > tbody > tr:nth-child(${index}) > td:nth-child(12) > span`;
+          const carYear = document.querySelector(carYearSelector).innerText;
+          const carMake = document.querySelector(carMakeSelector).innerText;
+          const carModel = document.querySelector(carModelSelector).innerText;
+          const damageType = document.querySelector(damageTypeSelector).innerText;
+          const info = {
+            carMake: carMake,
+            carModel: carModel,
+            carYear: carYear,
+            damageType: damageType,
+          };
+          return info;
+        },
+        j,
+        page
+      );
+
+      if (carDetails.carYear >= 2014) {
+        newCarResults.push(carDetails);
+      } else {
+        break;
+      }
     }
+
+    await page.click('#serverSideDataTable_next > a');
+    console.log('Going to the next page, give me a sec.');
+    await page.waitFor(4000);
   }
-  console.log(newCarResults);
+
+  console.log(newCarResults.length);
   await browser.close();
 }
