@@ -1,24 +1,24 @@
 const puppeteer = require('puppeteer');
 const readline = require('readline');
 const newCarResults = [];
+// you enter the car make and model to start the search
+process.stdout.write('Enter the Car Make and Model: ');
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: false,
 });
 
-rl.on('line', async function(line) {
+rl.on('line', function(line) {
   const makeAndModel = line.split(' ');
   const make = makeAndModel[0];
   const model = makeAndModel[1];
-  console.log(make, model);
-  await getCars(make, model);
   rl.close();
+  getCars(make, model);
 });
 
 async function getCars(make, model) {
-  const message = `Searching for ${make} and ${model}`;
+  const message = `Will begin the search for ${make} ${model}`;
   console.log(message);
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -26,9 +26,9 @@ async function getCars(make, model) {
   const url = `https://www.copart.com/lotSearchResults/?free=true&query=${make}%20${model}`;
   console.log(url);
   await page.goto(url);
-  await page.waitFor(2000);
+  await page.waitFor(1500);
   await page.click('#lot_year');
-  await page.waitFor(3000);
+  await page.waitFor(1500);
   // await page.screenshot({ path: 'screenshots/shot.png' });
 
   // gets information about the results that we got back from our search
@@ -83,7 +83,7 @@ async function getCars(make, model) {
     }
     await page.click('#serverSideDataTable_next > a');
     console.log('Going to the next page, give me a sec.');
-    await page.waitFor(2500);
+    await page.waitFor(2000);
   }
   console.log(`We have ${newCarResults.length} results in total`);
   await browser.close();
