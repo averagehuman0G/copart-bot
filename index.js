@@ -59,16 +59,30 @@ async function getCars(make, model) {
         const carMakeSelector = `${carSelector} > td:nth-child(5) > span`;
         const carModelSelector = `${carSelector} > td:nth-child(6) > span`;
         const damageTypeSelector = `${carSelector} > td:nth-child(12) > span`;
+        const retailPriceSelector = `${carSelector} > td:nth-child(13) > span`;
+        const locationSelector = `${carSelector} > td:nth-child(8) > a > span`;
+        const lotUrlSelector = `${carSelector} > td:nth-child(3) > div > a`;
 
         const carYear = document.querySelector(carYearSelector).innerText;
         const carMake = document.querySelector(carMakeSelector).innerText;
         const carModel = document.querySelector(carModelSelector).innerText;
         const damageType = document.querySelector(damageTypeSelector).innerText;
+        const retailPrice = document.querySelector(retailPriceSelector).innerText.split(' ')[0];
+        const location = document.querySelector(locationSelector).innerText;
+        const lotUrl = document
+          .querySelector(lotUrlSelector)
+          .getAttribute('ng-href')
+          .replace('.', '');
+
+        const url = `${window.location.hostname + lotUrl}`;
         const info = {
           carMake: carMake,
           carModel: carModel,
           carYear: carYear,
           damageType: damageType,
+          retailPrice: retailPrice,
+          location: location,
+          url: url,
         };
         console.log(info);
         return info;
